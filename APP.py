@@ -37,6 +37,12 @@ input_data = pd.DataFrame({
     'area_se': [area_se]
 })
 
+
+
+# Realizar la predicción
+if st.button("Predecir"):
+    try:
+
 # Escalar los datos de entrada
 try:
     input_data_scaled = standard_scaler.transform(input_data)
@@ -45,9 +51,7 @@ except Exception as e:
     st.error(f"Error al escalar los datos: {e}")
     st.stop()
 
-# Realizar la predicción
-if st.button("Predecir"):
-    try:
+        
         prediction = model.predict(input_data_scaled_df)
 
         # Mostrar el resultado de la predicción
