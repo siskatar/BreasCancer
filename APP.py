@@ -28,52 +28,71 @@ ALL_FEATURES = [
     'concavity_worst', 'concave points_worst', 'symmetry_worst', 'fractal_dimension_worst'
 ]
 
-# --- PASO 2: Crear dinámicamente los campos de entrada para cada característica ---
-st.header("Ingrese los valores de las variables:")
+# --- PASO 2: Crear un cargador de archivos para el Excel ---
+st.header("Cargar archivo para predicción")
 
-# Usamos un diccionario para almacenar las entradas del usuario
-input_dict = {}
+st.info(
+    "Por favor, suba un archivo Excel (`.xlsx`, `.xls`) o CSV que contenga las 30 columnas necesarias. "
+    "El orden de las columnas no importa, pero los nombres deben coincidir exactamente."
+)
 
-# Creamos columnas para una mejor disposición en la UI
-col1, col2, col3 = st.columns(3)
-columns = [col1, col2, col3]
+# Crear un DataFrame de plantilla para descargar
+template_df = pd.DataFrame(columns=ALL_FEATURES)
+template_csv = template_df.to_csv(index=False).encode('utf-8')
 
-# Itera sobre todas las características para crear un campo de entrada para cada una
-for i, feature in enumerate(ALL_FEATURES):
-    with columns[i % 3]: # Distribuye las entradas en 3 columnas
-        # Usamos st.number_input para cada característica
-        input_dict[feature] = st.number_input(
-            label=feature, 
-            key=feature, 
-            value=0.0, 
-            format="%.4f"
-        )
-
-# --- PASO 3: Construir el DataFrame completo a partir de las entradas ---
-input_df = pd.DataFrame([input_dict])
+st.download_button(
+   label="Descargar plantilla (CSV)",
+   data=template_csv,
+   file_name='plantilla_prediccion.csv',
+   mime='text/csv',
+)
 
 
-# --- PASO 4: Realizar la predicción cuando el usuario haga clic en el botón ---
-if st.button("Predecir"):
+uploaded_file = st.file_uploader("Elija un archivo", type=['xlsx', 'xls', 'csv'])
+
+# --- PASO 3: Procesar el archivo y realizar la predicción ---
+if uploaded_file is not None:
     try:
+        # Cargar los datos del archivo
+        if uploaded_file.name.endswith('.csv'):
+            input_df = pd.read_csv(uploaded_file)
+        else:
+            input_df = pd.read_excel(uploaded_file)
+        
+        st.subheader("Datos cargados del archivo:")
+        st.dataframe(input_df)
+
+        # --- Validación de Columnas ---
+        missing_cols = set(ALL_FEATURES) - set(input_df.columns)
+        if missing_cols:
+            st.error(f"Error: Faltan las siguientes columnas en el archivo: {', '.join(missing_cols)}")
+            st.stop()
+        
+        # Asegurar el orden correcto de las columnas
+        input_df_ordered = input_df[ALL_FEATURES]
+
         # Escalar el DataFrame completo
-        input_data_scaled = standard_scaler.transform(input_df)
+        input_data_scaled = standard_scaler.transform(input_df_ordered)
         
         # Realizar la predicción
         prediction = model.predict(input_data_scaled)
         prediction_proba = model.predict_proba(input_data_scaled)
 
-        # Mostrar el resultado de la predicción
-        st.header("Resultado de la predicción:")
+        # --- Mostrar Resultados ---
+        st.header("Resultados de la predicción:")
         
-        if prediction[0] == 0:
-            st.success("La predicción es: BENIGNO (Clase 0)")
-            st.write(f"Probabilidad de ser benigno: {prediction_proba[0][0]*100:.2f}%")
-            st.write(f"Probabilidad de ser maligno: {prediction_proba[0][1]*100:.2f}%")
-        else:
-            st.error("La predicción es: MALIGNO (Clase 1)")
-            st.write(f"Probabilidad de ser benigno: {prediction_proba[0][0]*100:.2f}%")
-            st.write(f"Probabilidad de ser maligno: {prediction_proba[0][1]*100:.2f}%")
+        # Crear un DataFrame con los resultados
+        results_df = input_df.copy()
+        results_df['Predicción'] = ['MALIGNO' if p == 1 else 'BENIGNO' for p in prediction]
+        results_df['Confianza'] = [f"{p.max()*100:.2f}%" for p in prediction_proba]
+        
+        # Aplicar estilo para resaltar la predicción
+        def highlight_prediction(row):
+            color = 'lightcoral' if row['Predicción'] == 'MALIGNO' else 'lightgreen'
+            return [f'background-color: {color}'] * len(row)
+
+        st.dataframe(results_df.style.apply(highlight_prediction, axis=1))
+
 
     except Exception as e:
-        st.error(f"Error al realizar la predicción: {e}")
+        st.error(f"Ocurrió un error al procesar el archivo: {e}")
