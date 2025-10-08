@@ -5,18 +5,18 @@ import numpy as np
 
 # Título de la aplicación
 st.title("Aplicación de Predicción de Cáncer de Mama")
+st.write("Esta aplicación predice si un tumor es benigno o maligno basado en un archivo de datos.")
 
 # Cargar el escalador y el modelo
 try:
     # Asegúrate de que los archivos estén en la misma carpeta que APP.py o proporciona la ruta completa
     standard_scaler = joblib.load('scaler.pkl')
     model = joblib.load('best_log_reg_model.pkl')
-    st.success("Escalador y modelo cargados exitosamente.")
 except FileNotFoundError:
     st.error("Error: Asegúrate de que los archivos 'scaler.pkl' y 'best_log_reg_model.pkl' estén en la ruta correcta.")
     st.stop()
 
-# --- PASO 1: Define las dos listas de características ---
+# --- Listas de características ---
 # Lista completa para el escalador (DEBE COINCIDIR CON TU ENTRENAMIENTO)
 ALL_FEATURES = [
     'radius_mean', 'texture_mean', 'perimeter_mean', 'area_mean', 'smoothness_mean', 
@@ -33,12 +33,14 @@ SELECTED_FEATURES = [
     'area_worst', 'concavity_worst', 'area_se'
 ]
 
-# --- PASO 2: Crear un cargador de archivos para el Excel ---
-st.header("Cargar archivo para predicción")
+st.divider()
+
+# --- PASO 1: Cargar el archivo de datos ---
+st.header("Paso 1: Cargar Archivo de Datos")
 
 st.info(
     "Por favor, suba un archivo Excel (`.xlsx`, `.xls`) o CSV que contenga el conjunto de datos completo (30 columnas). "
-    "El orden no importa, pero los nombres deben coincidir."
+    "Puede descargar una plantilla para asegurarse de que el formato sea el correcto."
 )
 
 # Crear un DataFrame de plantilla para descargar
@@ -52,10 +54,10 @@ st.download_button(
    mime='text/csv',
 )
 
+uploaded_file = st.file_uploader("Elija un archivo para analizar", type=['xlsx', 'xls', 'csv'], label_visibility="collapsed")
 
-uploaded_file = st.file_uploader("Elija un archivo", type=['xlsx', 'xls', 'csv'])
 
-# --- PASO 3: Procesar el archivo y realizar la predicción ---
+# --- PASO 2 y 3: Procesar, predecir y descargar ---
 if uploaded_file is not None:
     try:
         # Cargar los datos del archivo
@@ -64,9 +66,6 @@ if uploaded_file is not None:
         else:
             input_df = pd.read_excel(uploaded_file)
         
-        st.subheader("Datos cargados del archivo:")
-        st.dataframe(input_df)
-
         # --- Validación de Columnas ---
         missing_cols = set(ALL_FEATURES) - set(input_df.columns)
         if missing_cols:
@@ -89,13 +88,15 @@ if uploaded_file is not None:
         prediction = model.predict(model_input_df)
         prediction_proba = model.predict_proba(model_input_df)
 
-        # --- Mostrar Resultados ---
-        st.header("Resultados de la predicción:")
-        
         # Usamos el DataFrame original para mostrar los resultados
         results_df = input_df.copy()
         results_df['Predicción'] = ['MALIGNO' if p == 1 else 'BENIGNO' for p in prediction]
         results_df['Confianza'] = [f"{p.max()*100:.2f}%" for p in prediction_proba]
+        
+        st.divider()
+
+        # --- PASO 2: Mostrar Resultados ---
+        st.header("Paso 2: Visualizar Predicciones")
         
         # Aplicar estilo para resaltar la predicción
         def highlight_prediction(row):
@@ -103,7 +104,20 @@ if uploaded_file is not None:
             return [f'background-color: {color}' if col == 'Predicción' else '' for col in row.index]
 
         st.dataframe(results_df.style.apply(highlight_prediction, axis=1))
+        
+        st.divider()
 
+        # --- PASO 3: Descargar Resultados ---
+        st.header("Paso 3: Descargar Archivo con Predicciones")
+        
+        results_csv = results_df.to_csv(index=False).encode('utf-8')
+        st.download_button(
+           label="Descargar resultados (CSV)",
+           data=results_csv,
+           file_name='resultados_prediccion_cancer.csv',
+           mime='text/csv',
+        )
 
     except Exception as e:
         st.error(f"Ocurrió un error al procesar el archivo: {e}")
+
