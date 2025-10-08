@@ -19,12 +19,12 @@ except FileNotFoundError:
 # Crear campos de entrada para las variables predictoras
 st.header("Ingrese los valores de las variables:")
 
-perimeter_worst = st.number_input("perimeter_worst", value=0.0)
-concave_points_worst = st.number_input("concave points_worst", value=0.0)
-concave_points_mean = st.number_input("concave points_mean", value=0.0)
-area_worst = st.number_input("area_worst", value=0.0)
-concavity_worst = st.number_input("concavity_worst", value=0.0)
-area_se = st.number_input("area_se", value=0.0)
+perimeter_worst = st.number_input("perimeter_worst")
+concave_points_worst = st.number_input("concave points_worst")
+concave_points_mean = st.number_input("concave points_mean")
+area_worst = st.number_input("area_worst")
+concavity_worst = st.number_input("concavity_worst")
+area_se = st.number_input("area_se")
 
 
 # Crear un DataFrame con los datos de entrada
