@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import joblib
 import numpy as np
+import io
 
 # Título de la aplicación
 st.title("Aplicación de Predicción de Cáncer de Mama")
@@ -101,21 +102,30 @@ if uploaded_file is not None:
         # Aplicar estilo para resaltar la predicción
         def highlight_prediction(row):
             color = 'lightcoral' if row['Predicción'] == 'MALIGNO' else 'lightgreen'
-            return [f'background-color: {color}' if col == 'Predicción' else '' for col in row.index]
+            # Aplica el color a toda la fila para mayor visibilidad
+            return [f'background-color: {color}'] * len(row)
 
-        st.dataframe(results_df.style.apply(highlight_prediction, axis=1))
+        # Crear el objeto Styler para mostrar Y para descargar
+        styled_df = results_df.style.apply(highlight_prediction, axis=1)
+
+        st.dataframe(styled_df)
         
         st.divider()
 
         # --- PASO 3: Descargar Resultados ---
         st.header("Paso 3: Descargar Archivo con Predicciones")
         
-        results_csv = results_df.to_csv(index=False).encode('utf-8')
+        # Crear un buffer en memoria para guardar el archivo Excel
+        output = io.BytesIO()
+        # Escribir el DataFrame estilizado en el buffer de Excel
+        styled_df.to_excel(output, engine='openpyxl', index=False)
+        excel_data = output.getvalue()
+        
         st.download_button(
-           label="Descargar resultados (CSV)",
-           data=results_csv,
-           file_name='resultados_prediccion_cancer.csv',
-           mime='text/csv',
+           label="Descargar resultados (Excel)",
+           data=excel_data,
+           file_name='resultados_prediccion_cancer.xlsx',
+           mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         )
 
     except Exception as e:
