@@ -44,12 +44,9 @@ if st.button("Predecir"):
     try:
 
 # Escalar los datos de entrada
-try:
     input_data_scaled = standard_scaler.transform(input_data)
     input_data_scaled_df = pd.DataFrame(input_data_scaled, columns=input_data.columns)
-except Exception as e:
-    st.error(f"Error al escalar los datos: {e}")
-    st.stop()
+
 
         
         prediction = model.predict(input_data_scaled_df)
