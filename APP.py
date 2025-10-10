@@ -12,7 +12,7 @@ st.write("Esta aplicación predice si un tumor es benigno o maligno basado en un
 try:
     # Asegúrate de que los archivos estén en la misma carpeta que APP.py o proporciona la ruta completa
     standard_scaler = joblib.load('scaler.pkl')
-    model = joblib.load('best_log_reg_model.pkl')
+    model = joblib.load('best_xgb_model.pkl')
 except FileNotFoundError:
     st.error("Error: Asegúrate de que los archivos 'scaler.pkl' y 'best_log_reg_model.pkl' estén en la ruta correcta.")
     st.stop()
