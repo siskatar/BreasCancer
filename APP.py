@@ -14,7 +14,7 @@ try:
     standard_scaler = joblib.load('scaler.pkl')
     model = joblib.load('best_xgb_model.pkl')
 except FileNotFoundError:
-    st.error("Error: Asegúrate de que los archivos 'scaler.pkl' y 'best_log_reg_model.pkl' estén en la ruta correcta.")
+    st.error("Error: Asegúrate de que los archivos 'scaler.pkl' y 'best_xgb_model.pkl' estén en la ruta correcta.")
     st.stop()
 
 # --- Listas de características ---
