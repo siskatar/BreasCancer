@@ -3,6 +3,7 @@ import pandas as pd
 import joblib
 import numpy as np
 import io
+import xgboost
 
 # Título de la aplicación
 st.title("Aplicación de Predicción de Cáncer de Mama")
